@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>base</title>
+  </head>
+  <body>
+    <div>base</div>
+    <div id="app1"></div>
+    <div id="app2"></div>
+    <script type="module">
+      const bindEventListener = function (type) {
+        const historyEvent = history[type];
+        return function () {
+          const newEvent = historyEvent.apply(this, arguments);
+          const e = new Event(type);
+          e.arguments = arguments;
+          window.dispatchEvent(e);
+          return newEvent;
+        };
+      };
+      history.pushState = bindEventListener('pushState');
+      history.replaceState = bindEventListener('replaceState');
+
+      console.log(0);
+      import { registerMicroApps, start } from './myQiankun/main.js';
+
+      const apps = [
+        {
+          name: 'app1',
+          entry: '../app1',
+          container: '#app1',
+          activeRule: '/app/app1',
+        },
+        {
+          name: 'app2',
+          entry: '../app2',
+          container: '#app2',
+          activeRule: '/app/app2',
+        },
+      ];
+      // 注册应用
+      registerMicroApps(apps);
+      start();
+    </script>
+    <button onclick="history.pushState({} , '', '/app/app1')">app1</button>
+    <button onclick="history.pushState({} , '', '/app/app2')">app2</button>
+  </body>
+</html>
