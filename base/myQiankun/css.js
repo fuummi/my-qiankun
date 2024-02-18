@@ -1,21 +1,10 @@
-const RuleType = {
-  STYLE: 1,
-  MEDIA: 4,
-  SUPPORTS: 12,
-  IMPORT: 3,
-  FONT_FACE: 5,
-  PAGE: 6,
-  KEYFRAMES: 7,
-  KEYFRAME: 8,
-}
-
 export class ScopedCSS {
   sheet
   swapNode;
 
-  constructor() {
+  constructor(appName) {
     const styleNode = document.createElement('style');
-    document.body.appendChild(styleNode);
+    document.body.appendChild(styleNode); // 一旦cssRule所关联的style标签脱离document，这些cssRule都会失效
     this.swapNode = styleNode;
     this.sheet = styleNode.sheet;
     this.sheet.disabled = true;

@@ -4,12 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>base</title>
+    <style>
+      div {
+        background-color: #fff671;
+      }
+    </style>
   </head>
   <body>
     <div>base</div>
     <div id="app1"></div>
     <div id="app2"></div>
     <script type="module">
+      // pushState replaceState事件监听
       const bindEventListener = function (type) {
         const historyEvent = history[type];
         return function () {
@@ -23,7 +29,6 @@
       history.pushState = bindEventListener('pushState');
       history.replaceState = bindEventListener('replaceState');
 
-      console.log(0);
       import { registerMicroApps, start } from './myQiankun/main.js';
 
       const apps = [
@@ -43,8 +48,14 @@
       // 注册应用
       registerMicroApps(apps);
       start();
+
+      const logVar = document.querySelector('#logVar').addEventListener('click', () => {
+        console.log('subApp1GlobalVar', window.subApp1GlobalVar);
+        console.log('subApp2GlobalVar', window.subApp2GlobalVar);
+      });
     </script>
     <button onclick="history.pushState({} , '', '/app/app1')">app1</button>
     <button onclick="history.pushState({} , '', '/app/app2')">app2</button>
+    <button id="logVar">logVar</button>
   </body>
 </html>

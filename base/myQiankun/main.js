@@ -2,32 +2,22 @@ import { loadApp } from './loadApp.js';
 
 const NOT_LOADED = "NOT_LOADED";
 const LOADING_SOURCE_CODE = "LOADING_SOURCE_CODE";
-const NOT_BOOTSTRAPPED = "NOT_BOOTSTRAPPED";
-const BOOTSTRAPPING = "BOOTSTRAPPING";
 const NOT_MOUNTED = "NOT_MOUNTED";
 const MOUNTING = "MOUNTING";
 const MOUNTED = "MOUNTED";
-const UPDATING = "UPDATING";
 const UNMOUNTING = "UNMOUNTING";
 const UNLOADING = "UNLOADING";
-const LOAD_ERROR = "LOAD_ERROR";
-const SKIP_BECAUSE_BROKEN = "SKIP_BECAUSE_BROKEN";
 
+// 注册应用存储
 const apps = [];
-const appsToUnloadMap = {};
-const appsToUnMountMap = {}
 let started = false;
-let currentUrl = window.location.href;
 
 export function start(opts) {
   started = true;
 }
 
-export function isStarted() {
-  return started;
-}
-
-export function registerMicroApps(apps, lifeCycles) {
+// 乾坤对single-spa注册应用的封装
+export function registerMicroApps(apps, lifeCycles) { // 乾坤
   apps.forEach((app) => {
     const { name, activeRule, props, ...appConfig } = app;
     registerApplication({
@@ -47,7 +37,8 @@ export function registerMicroApps(apps, lifeCycles) {
   });
 }
 
-export function registerApplication(appConfig) {
+// 注册应用
+export function registerApplication(appConfig) { // single-spa
   // 检测是否已经注册过
   if (!apps.some(item => item.name === appConfig.name)) {
     apps.push(Object.assign({
@@ -58,119 +49,85 @@ export function registerApplication(appConfig) {
   }
 }
 
-export function getAppChanges() {
+function toLoad(app) {
+  app.status = LOADING_SOURCE_CODE;
+  return app.loadApp(app).then((val) => {
+    app.status = NOT_MOUNTED;
+    app.mount = val.mount
+    app.unmount = val.unmount
+    return app;
+  });
+}
+
+function toUnload(app) {
+  app.status = UNLOADING;
+  delete app.mount;
+  delete app.unmount;
+  app.status = NOT_LOADED;
+  return app;
+}
+
+function toUnmount(app) {
+  app.status = UNMOUNTING;
+  app.unmount.map(f => f())
+  app.status = NOT_MOUNTED;
+  return app;
+}
+
+function toMount(app) {
+  app.status = "MOUNTING";
+  app.mount.map(f => f())
+  app.status = MOUNTED
+}
+
+function getAppChanges() {
   const appsToUnload = [],
     appsToUnmount = [],
     appsToLoad = [],
     appsToMount = [];
 
   apps.forEach((app) => {
-    const appShouldBeActive = app.activeWhen === window.location.pathname
+    const appShouldBeActive = app.activeWhen === window.location.pathname // !
     switch (app.status) {
       case NOT_LOADED: // 未加载，初始化
         appsToLoad.push(app);
         break;
-      case appShouldBeActive && NOT_MOUNTED:
-        appsToMount.push(app);
+      case NOT_MOUNTED:
+        if (appShouldBeActive) { // 激活，挂载
+          appsToMount.push(app);
+        }
         break;
-      case !appShouldBeActive && MOUNTED:
-        appsToUnmount.push(app);
+      case MOUNTED:
+        if (!appShouldBeActive) { // 卸载
+          appsToUnmount.push(app);
+        }
         break;
     }
   });
-  console.log(appsToUnload, appsToUnmount, appsToLoad, appsToMount);
+  // console.log(appsToUnload, appsToUnmount, appsToLoad, appsToMount);
   return { appsToUnload, appsToUnmount, appsToLoad, appsToMount };
 }
 
-export function toLoadPromise(appOrParcel) {
-  return Promise.resolve().then(() => {
-    appOrParcel.status = LOADING_SOURCE_CODE;
-    return appOrParcel.loadPromise = Promise.resolve()
-      .then(() => {
-        return appOrParcel.loadApp(appOrParcel).then((val) => {
-          appOrParcel.status = NOT_MOUNTED;
-          appOrParcel.mount = val.mount
-          appOrParcel.unmount = val.unmount
-          return appOrParcel;
-        });
-      })
-
-  });
-}
-
-export function reroute(pendingPromises = []) {
-  let startTime, profilerKind;
-
+// 路由变换
+function reroute(pendingPromises = []) {
   const { appsToUnload, appsToUnmount, appsToLoad, appsToMount } = getAppChanges();
-
-  let appsThatChanged,
-    oldUrl = currentUrl,
-    newUrl = (currentUrl = window.location.href);
-  if (isStarted()) {
-    return performAppChanges();
+  if (started) {
+    // 重新渲染应用
+    const unloadPromises = appsToUnload.map(toUnload); // 清除
+    const unmountUnloadPromises = appsToUnmount.map(toUnmount); // 卸载
+    const mountPromises = appsToMount.map(toMount); // 挂载
   } else {
-    return loadApps(); // 初始化
-  }
-
-  async function loadApps() {
-    const loadPromises = appsToLoad.map(toLoadPromise);
-  }
-
-  function toUnloadPromise(app) {
-    app.status = UNLOADING;
-    delete appsToUnloadMap[app.name];
-    delete app.bootstrap;
-    delete app.mount;
-    delete app.unmount;
-    delete app.unload;
-    app.status = NOT_LOADED;
-    return app;
-  }
-
-  function toUnmountPromise(app) {
-    app.status = UNMOUNTING;
-    app.unmount.map(f => f())
-    app.status = NOT_MOUNTED;
-    return app;
-  }
-
-
-  function performAppChanges() {
-    return Promise.resolve().then(() => {
-
-      return Promise.resolve().then(() => {
-        const unloadPromises = appsToUnload.map(toUnloadPromise);
-
-        const unmountUnloadPromises = appsToUnmount.map(toUnmountPromise);
-
-        const allUnmountPromises = unmountUnloadPromises.concat(unloadPromises);
-
-        const unmountAllPromise = Promise.all(allUnmountPromises);
-
-        let unmountFinishedTime;
-
-        const loadThenMountPromises = appsToLoad.map((app) => {
-          app.status = NOT_MOUNTED;
-        });
-        const mountPromises = appsToMount
-          .filter((appToMount) => appsToLoad.indexOf(appToMount) < 0)
-          .map((appToMount) => {
-            appToMount.status = MOUNTED
-            appToMount.mount.map(f => f())
-          });
-
-      });
-    });
+    return appsToLoad.map(toLoad); // 初始化
   }
 }
-window.addEventListener("hashchange", (e) => {
-  e.preventDefault()
-  reroute()
-});
+
 window.addEventListener("popstate", (e) => {
   e.preventDefault()
   reroute()
 });
 window.addEventListener("pushState", (e) => {
+  reroute()
+});
+window.addEventListener("replaceState", (e) => {
   reroute()
 });

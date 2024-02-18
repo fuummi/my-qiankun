@@ -6,12 +6,15 @@
     <title>Document</title>
     <style>
       div {
-        color: red;
+        background-color: rgb(242, 155, 155);
       }
     </style>
   </head>
   <body>
     <div>app2</div>
-    <script src="/app2/index.js"></script>
+    <script>
+      console.log('app2 load');
+      window.subApp2GlobalVar = 'SubApp2';
+    </script>
   </body>
 </html>
