@@ -8,9 +8,9 @@ function createElement(appContent, appName) {
   const containerElement = document.createElement('div');
   containerElement.innerHTML = appContent;
   const appElement = containerElement.firstChild
-  const attr = appElement.getAttribute('data-qiankun');
+  const attr = appElement.getAttribute('micro-app');
   if (!attr) {
-    appElement.setAttribute('data-qiankun', appName); // 加上data-qiankun属性，css隔离的基础
+    appElement.setAttribute('micro-app', appName); // 加上micro-app属性，css隔离的基础
   }
 
   const process = (appWrapper, stylesheetElement, appName) => {
@@ -19,7 +19,7 @@ function createElement(appContent, appName) {
     }
     const tag = (appWrapper.tagName || '').toLowerCase();
     if (tag && stylesheetElement.tagName === 'STYLE') {
-      const prefix = `${tag}[data-qiankun="${appName}"]`;
+      const prefix = `${tag}[micro-app="${appName}"]`;
       processor.process(stylesheetElement, prefix);
     }
   };
@@ -31,7 +31,7 @@ function createElement(appContent, appName) {
   return appElement;
 }
 
-export async function loadApp(app, configuration = {}, lifeCycles) {
+export async function loadApp(app, lifeCycles) {
   const { entry, name: appName } = app;
   // 获取html模板，执行script的函数
   const { template, execScripts } = await importEntry(entry);

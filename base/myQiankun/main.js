@@ -17,14 +17,14 @@ export function start(opts) {
 }
 
 // 乾坤对single-spa注册应用的封装
-export function registerMicroApps(apps, lifeCycles) { // 乾坤
+export function registerMicroApps(apps) { // 乾坤
   apps.forEach((app) => {
-    const { name, activeRule, props, ...appConfig } = app;
+    const { name, activeRule, ...appConfig } = app;
     registerApplication({
       name,
       loadApp: async () => {
         const { mount, unmount } = (
-          await loadApp({ name, props, ...appConfig }, {}, lifeCycles)
+          await loadApp({ name, ...appConfig }, {})
         )();
         return {
           mount: [...mount],
@@ -32,20 +32,19 @@ export function registerMicroApps(apps, lifeCycles) { // 乾坤
         };
       },
       activeWhen: activeRule,
-      customProps: props,
     });
   });
+  reroute()
 }
 
 // 注册应用
-export function registerApplication(appConfig) { // single-spa
-  // 检测是否已经注册过
+function registerApplication(appConfig) {
+  // 检测是否已经注册过，避免重复注册
   if (!apps.some(item => item.name === appConfig.name)) {
     apps.push(Object.assign({
       ...appConfig,
       status: NOT_LOADED
     }));
-    reroute()
   }
 }
 
@@ -109,7 +108,7 @@ function getAppChanges() {
 }
 
 // 路由变换
-function reroute(pendingPromises = []) {
+function reroute() {
   const { appsToUnload, appsToUnmount, appsToLoad, appsToMount } = getAppChanges();
   if (started) {
     // 重新渲染应用

@@ -9,6 +9,7 @@
         background-color: #fff671;
       }
     </style>
+    <link rel="stylesheet" href="">
   </head>
   <body>
     <div>base</div>
@@ -31,7 +32,8 @@
 
       import { registerMicroApps, start } from './myQiankun/main.js';
 
-      const apps = [
+      // 注册应用
+      registerMicroApps([
         {
           name: 'app1',
           entry: '../app1',
@@ -44,9 +46,7 @@
           container: '#app2',
           activeRule: '/app/app2',
         },
-      ];
-      // 注册应用
-      registerMicroApps(apps);
+      ]);
       start();
 
       const logVar = document.querySelector('#logVar').addEventListener('click', () => {

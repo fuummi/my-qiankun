@@ -1,21 +1,17 @@
 export class ScopedCSS {
-  sheet
   swapNode;
 
   constructor(appName) {
     const styleNode = document.createElement('style');
     document.body.appendChild(styleNode); // 一旦cssRule所关联的style标签脱离document，这些cssRule都会失效
     this.swapNode = styleNode;
-    this.sheet = styleNode.sheet;
-    this.sheet.disabled = true;
   }
 
   process(styleNode, prefix = '') {
     if (styleNode.textContent !== '') {
       const textNode = document.createTextNode(styleNode.textContent || '');
       this.swapNode.appendChild(textNode);
-      const sheet = this.swapNode.sheet;
-      const rules = Array.from(sheet?.cssRules);
+      const rules = Array.from(this.swapNode.sheet?.cssRules);
       const css = this.rewrite(rules, prefix);
       styleNode.textContent = css;
       this.swapNode.removeChild(textNode);
