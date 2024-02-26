@@ -17,14 +17,14 @@ export function start(opts) {
 }
 
 // 乾坤对single-spa注册应用的封装
-export function registerMicroApps(apps) { // 乾坤
+export function registerMicroApps(apps, lifeCycles) { // 乾坤
   apps.forEach((app) => {
-    const { name, activeRule, ...appConfig } = app;
+    const { name, activeRule, props, ...appConfig } = app;
     registerApplication({
       name,
       loadApp: async () => {
         const { mount, unmount } = (
-          await loadApp({ name, ...appConfig }, {})
+          await loadApp({ name, props, ...appConfig }, lifeCycles)
         )();
         return {
           mount: [...mount],

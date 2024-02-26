@@ -9,7 +9,7 @@
         background-color: #fff671;
       }
     </style>
-    <link rel="stylesheet" href="">
+    <link rel="stylesheet" href="" />
   </head>
   <body>
     <div>base</div>
@@ -31,22 +31,54 @@
       history.replaceState = bindEventListener('replaceState');
 
       import { registerMicroApps, start } from './myQiankun/main.js';
+      import { initGlobalState } from './myQiankun/globalState.js';
+
+      const fromBaseToApp1 = 'hi app1';
+      const fromBaseToApp2 = 'hi app2';
 
       // 注册应用
-      registerMicroApps([
+      registerMicroApps(
+        [
+          {
+            name: 'app1',
+            entry: '../app1',
+            container: '#app1',
+            activeRule: '/app/app1',
+            props: {
+              msg: fromBaseToApp1,
+            },
+          },
+          {
+            name: 'app2',
+            entry: '../app2',
+            container: '#app2',
+            activeRule: '/app/app2',
+            props: {
+              msg: fromBaseToApp2,
+            },
+          },
+        ],
         {
-          name: 'app1',
-          entry: '../app1',
-          container: '#app1',
-          activeRule: '/app/app1',
+          beforeLoad: [(app) => console.log('before load', app.name)],
+          beforeMount: [(app) => console.log('before mount', app.name)],
+          afterMount: [(app) => console.log('after mount', app.name)],
+          beforeUnmount: [(app) => console.log('before unmount', app.name)],
+          afterUnmount: [(app) => console.log('after unmount', app.name)],
+        }
+      );
+
+      const { onGlobalStateChange, setGlobalState } = initGlobalState();
+      onGlobalStateChange((value, prev) =>
+        console.log('GlobalStateChange', value, prev)
+      );
+
+      setGlobalState({
+        ignore: 'master',
+        user: {
+          name: 'master',
         },
-        {
-          name: 'app2',
-          entry: '../app2',
-          container: '#app2',
-          activeRule: '/app/app2',
-        },
-      ]);
+      });
+
       start();
 
       const logVar = document.querySelector('#logVar').addEventListener('click', () => {
